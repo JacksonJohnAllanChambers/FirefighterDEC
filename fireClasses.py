@@ -56,6 +56,11 @@ class fireFighter:
     def location(self):
         return self.x, self.y
     
+    def x(self):
+        return self.x
+    def y(self):
+        return self.y
+    
     def fireEscape(self):
 
         ogX, ogY = self.location

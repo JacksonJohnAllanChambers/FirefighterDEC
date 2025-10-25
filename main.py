@@ -1,5 +1,5 @@
 from fireClasses import RefillStation, Drone
-import Rescue
+import Rescue, FirePrediction
 
 Yarmouth = RefillStation("Yarmouth", 0, 40),
 Lunenburg = RefillStation("Lunenburg", 140, 25),
@@ -21,11 +21,13 @@ Predicted_map = [['\0' for _ in range(550)] for _ in range(100)]
 Fire_fighters = []
 
 def main():
+    # get info, also handles rescuing citicens
     Mapping.scan_map(Current_map)
 
     #check if firefigter needs to escape
     Rescue.firefighters(Current_map)
    
+   Predicted_map = FirePrediction.fire_prediction(Current_map)
 
 
     
