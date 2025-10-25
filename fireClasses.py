@@ -12,10 +12,12 @@ class RefillStation:
         self. y = y
 
 class Zone:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
+    def __init__(self, xMax, yMax, xMin, yMin):
+        self.xMax = xMax
+        self.yMax = yMax
+        self.xMin = xMin
+        self.yMax = yMin
+        
 class Drone:
     def __init__(self, zone, number = 0, x = 0, y = 0):
         self.number = number
