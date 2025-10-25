@@ -9,7 +9,8 @@
 #define XMAX 550
 #define YMAX 100
 #define MIN 0
-#define NUM_RNDS 10
+#define NUM_RNDS 10 //number of rounds may change
+#define NUM_FIREFIGHTERS 25
 
 
 struct fire_data {
@@ -19,6 +20,11 @@ struct fire_data {
 	int citizen;
 	int firefighter;
 }; typedef struct fire_data fire_data;
+
+struct firefighter_coords {
+	int x;
+	int y;
+}; typedef struct firefighter_coords firefighter_coords;
 
 fire_data map[XMAX][YMAX];
 
@@ -47,8 +53,9 @@ int main(void) {
 	int xr_min, xr_max, yr_min, yr_max;
 	int round_num = 0; //which round we are on
 	int new_round_num = 0; //round listed at top of file
-	int mapline; //line read from file
+	long mapline; //line read from file
 	int cur_severity, new_severity;
+	firefighter_coords firefighters[NUM_FIREFIGHTERS];
 
 	//get seed from user
 	printf("Enter seed: ");
@@ -90,7 +97,22 @@ int main(void) {
 			y = getrand(yr_min, yr_max);
 			map[x][y].fire_severity = getrand(1, 9);
 		}
-		map[x][y].firefighter = 1; //add one firefighter to each fire
+
+		//distribute firefighters to each fire
+		for (int f = 0; f < (NUM_FIREFIGHTERS / NUM_FIRES); f++) {
+			x = getrand(xr_min, xr_max);
+			y = getrand(yr_min, yr_max);
+			if (map[x][y].fire_severity == 0) {
+				map[x][y].firefighter = 1; //add a firefighter close to the fire
+
+				//store firefighter positions
+				firefighters[f + i*NUM_FIRES].x = x;
+				firefighters[f + i*NUM_FIRES].y = y;
+			}
+			else {
+				f--; //can't add a firefighter on top of a fire
+			}
+		}
 	}
 
 	//initial citizen generation
@@ -119,7 +141,7 @@ int main(void) {
 		printf("Round %d\n", round_num);
 
 		//read updated data from file
-		fout = fopen("map.txt", "r+");
+		fout = fopen("map.txt", "r");
 		fscanf(fout, "%d", &round_num); // store the round number
 		for (x = 0; x < XMAX; x++) {
 			for (y = 0; y < YMAX; y++) {
@@ -131,8 +153,10 @@ int main(void) {
 				map[x][y].firefighter = mapline && 0b00001;
 			}
 		}
+		fclose(fout);
 
 		//spread the fire
+		fout = fopen("map.txt", "r+");
 		for (x = 0; x < XMAX; x++) {
 			for (y = 0; y < YMAX; y++) {
 				if (map[x][y].fire_severity > 0) {
@@ -176,10 +200,35 @@ int main(void) {
 			}
 		}
 
+		//fight the fire (firefighters)
+		for (int f = 0; f < NUM_FIREFIGHTERS; f++) {
+			x0 = firefighters[f].x;
+			y0 = firefighters[f].y;
+			xr_min = x0 - 1;
+			xr_max = x0 + 1;
+			yr_min = y0 - 1;
+			yr_max = y0 + 1;
+
+			if (map[xr_min][y0].fire_severity > 0) {
+				map[xr_min][y0].fire_severity--;
+			}
+				
+			if(map[xr_max][y0].fire_severity > 0) {
+				map[xr_max][y0].fire_severity--;
+			}
+				
+			if (map[x0][yr_min].fire_severity > 0) {
+				map[x0][yr_min].fire_severity--;
+			}
+				
+			if (map[x0][yr_max].fire_severity > 0) {
+				map[x0][yr_max].fire_severity--;
+			}
+		}
+
 		//update map
 		print_map(fout, round_num, map);
 		round_num++;
-
 	}
 
 	return 0;
