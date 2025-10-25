@@ -1,5 +1,5 @@
 from fireClasses import RefillStation, Drone
-import Rescue, FirePrediction
+import Rescue, FirePrediction, Mapping
 
 Yarmouth = RefillStation("Yarmouth", 0, 40),
 Lunenburg = RefillStation("Lunenburg", 140, 25),
@@ -14,7 +14,9 @@ droneThree = Drone(3, 0, 0)
 droneFour = Drone(4, 0, 0)
 droneFive = Drone(5, 0, 0)
 droneSix = Drone(6, 0, 0)
-import Mapping
+
+drones = [droneOne, droneTwo, droneThree, droneFour, droneFive, droneSix]
+
 
 Current_map = [['\0' for _ in range(550)] for _ in range(100)]
 Predicted_map = [['\0' for _ in range(550)] for _ in range(100)]
@@ -27,7 +29,16 @@ def main():
     #check if firefigter needs to escape
     Rescue.firefighters(Current_map)
    
-   Predicted_map = FirePrediction.fire_prediction(Current_map)
+    Predicted_map = FirePrediction.fire_prediction(Current_map).copy()
+
+    for i in range(5):
+        drones[i].Search() #this handles all the drones moves
+    
+    
+
+    
+
+
 
 
     
