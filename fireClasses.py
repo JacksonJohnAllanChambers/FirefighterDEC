@@ -11,22 +11,19 @@ class RefillStation:
         self.x = x
         self.y = y
 
-class Zone:
-    def __init__(self, xMax, yMax, xMin, yMin, station):
+
+class Drone:
+    def __init__(self, station, number = 0, x = 0, y = 0, xMax = 0, yMax = 0, xMin = 0, yMin= 0):
+        self.number = number
+        self.x = x
+        self.y = y
+        self.water = 10
+        self.capacity = 10
         self.xMax = xMax
         self.yMax = yMax
         self.xMin = xMin
         self.yMax = yMin
         self.station = station
-
-class Drone:
-    def __init__(self, z, number = 0, x = 0, y = 0,):
-        self.number = number
-        self.x = x
-        self.y = y
-        self.zone = z
-        self.water = 0
-        self.capacity = 10
 
     def firefight(self, i):
         fireSeverity = self.location.getFireSeverity()
