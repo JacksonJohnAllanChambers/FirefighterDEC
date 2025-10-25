@@ -1,7 +1,9 @@
 #mapping
 import sys
 import math
-
+import fireClasses
+import numpy as np
+from typing import Union
 # for string xxxyyyfwcf
 # x cord (0-2)
 # y cord (3-4)
@@ -13,6 +15,9 @@ import math
 # firefighters (11)
 # turns since seen (12)
 # trust value (13)
+
+
+WIDTH, HEIGHT = 550, 100
 
 Current_map = [['\0' for _ in range(550)] for _ in range(100)]
 Predicted_map = [['\0' for _ in range(550)] for _ in range(100)]
@@ -44,7 +49,7 @@ def scan_map(map):
                 ycord = content[3] + content[4]
 
                 #Check if 
-                for location in range(5):
+                for location in range(6):
                     #get drone location
                     drone_location = drone_location(location)
                     #check if in range of drone
@@ -112,7 +117,7 @@ def set_tust(x,y,val):
      
 
 ##water route
-def get_refil_path(drone):
+def get_refil_path(Drone):
     #define water stations
     station = [
             [0,40],
@@ -124,8 +129,8 @@ def get_refil_path(drone):
 
     ]
 
-    x = drone.x
-    y = drone.y
+    x = Drone.x
+    y = Drone.y
 
     #get closest refill station
     distance = math.sqrt( ((x-station[1][1])**2) + ((y-station[1][2])**2) ) #assume first is closest
@@ -199,8 +204,55 @@ def get_refil_path(drone):
                     y += y_direction
                 else:
                     x += x_direction
-                    
 
+        Drone.move(x,y)
+
+def in_bounds(x, y): 
+    return 0 <= x < WIDTH and 0 <= y < HEIGHT
+
+def trust_from_neighbors_tiles(grid, x: int, y: int):
+    """
+    grid[y][x] is either '\\0' or a tile string.
+    n is the character at n_idx, T is the character at T_idx within the string.
+    """
+    n_idx: int = 12
+    T_idx: int = 13
+    if not in_bounds(x, y):
+        return '\0'
+
+    nbrs = []
+    if y > 0:            nbrs.append((x, y-1))
+    if y < HEIGHT - 1:   nbrs.append((x, y+1))
+    if x > 0:            nbrs.append((x-1, y))
+    if x < WIDTH - 1:    nbrs.append((x+1, y))
+
+    uncertain_count = 0
+    certain_ns = []
+
+    for nx, ny in nbrs:
+        tile = grid[ny][nx]
+        if tile == '\0' or not tile:
+            uncertain_count += 1
+            continue
+        # parse n and T safely
+        try:
+            n_val = int(tile[n_idx])
+            T_val = int(tile[T_idx])
+        except (IndexError, ValueError):
+            # malformed → treat as uncertain for safety
+            uncertain_count += 1
+            continue
+
+        if T_val < 9:  # certain/trustworthy
+            certain_ns.append(n_val)
+
+    if uncertain_count == 0:
+        return 0
+
+    avg_n = (sum(certain_ns) / len(certain_ns)) if certain_ns else 0.0
+    trust_val = uncertain_count * avg_n
+
+    return '\0' if trust_val > 9 else int(round(trust_val))
         
 
 
