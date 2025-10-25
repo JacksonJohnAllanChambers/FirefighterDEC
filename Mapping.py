@@ -26,24 +26,7 @@ WIDTH, HEIGHT = 550, 100
 Current_map = [['\0' for _ in range(550)] for _ in range(100)]
 Predicted_map = [['\0' for _ in range(550)] for _ in range(100)]
 
-##working main, will really be in other fike just showing how function
-def main():
-    #create initial map of null characters
-
-
-    scan_map(Current_map)
-
-    while(1):
-        Current_map = Predicted_map #update predictions
-        scan_map(Current_map)
-         
-
-
 def scan_map(map):
-
-    #   drone#.location() -> returns xxxyy
-
-
     #scan data
     with open('map.txt', 'r') as file: # open file for scaning
         for line in file:
@@ -52,12 +35,13 @@ def scan_map(map):
                 xcord = content[0] + content[1] + content [2]
                 ycord = content[3] + content[4]
 
+                #update real map
+                main.Real_map[xcord][ycord][content]
+
                 #Check if 
-                for location in range(6):
+                for i in range(5):
                     #get drone location
-                    drone_location = drone_location(location)
-                    #check if in range of drone
-                    if (drone_location.x -1 <= int(xcord) <= drone_location.x + 1) and (drone_location.y -1 <= int(ycord) <= drone_location.y + 1):
+                    if (main.drones[i].x -1 <= int(xcord) <= main.drones[i].x + 1) and (main.drones[i].y -1 <= int(ycord) <= main.drones[i].y + 1):
                         #get rest of data
                         fire = content[6]
                         wind = content[7]
@@ -75,7 +59,11 @@ def submit_moves(Submitted_map):
      with open('map.txt', 'w') as file:
           for x in range(550):
                for y in range(100):
-                    file.write(Submitted_map[x][y] + '\n')
+                    ## check if we altered that data
+                    if Submitted_map[x][y] != '\0':
+                        file.write(Submitted_map[x][y] + '\n')
+                    else:
+                        file.write(main.Real_mapmap[x][y] + '\n')
 
 def update_predicted_map(map):
     main.Predicted_map = map
