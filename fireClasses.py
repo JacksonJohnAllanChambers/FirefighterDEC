@@ -1,5 +1,9 @@
 import Mapping
-import numpy as np
+
+xMax = 550
+yMax = 100
+xMin = 0
+yMin = 0
 
 class RefillStation:
     def __init__(self, name, x, y):
@@ -8,10 +12,12 @@ class RefillStation:
         self. y = y
 
 class Zone:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
+    def __init__(self, xMax, yMax, xMin, yMin):
+        self.xMax = xMax
+        self.yMax = yMax
+        self.xMin = xMin
+        self.yMax = yMin
+        
 class Drone:
     def __init__(self, zone, number = 0, x = 0, y = 0):
         self.number = number
@@ -45,6 +51,26 @@ class Drone:
 
     def location(self):
         return self.x, self.y
+    
+    def searchFire(self):
+        x, y = self.location()
+
+        if self.water == 0:
+            self.waterRefill()
+            return
+    
+        while xMax <= x <= xMin:
+         while yMax <= y <= yMin + 1:
+            fire = Mapping.get_fire(x,y)
+            if fire >= highFire:
+                highFire = (x,y)
+            if highFire != 0:
+                self.move(highFire)
+            else:
+                self.searchFire()
+
+    def Empty_Search():
+        Mapping.get_info(x,y)
     
 class fireFighter:
     def __init__(self, x, y):
