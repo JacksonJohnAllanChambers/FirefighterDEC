@@ -6,7 +6,6 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.lines import Line2D
 from matplotlib.transforms import Affine2D
 from typing import Optional, Dict, List, Tuple
-
 # -----------------------------------------------------------------------------
 # Local helpers (previously imported) inlined to avoid external self-loading
 # -----------------------------------------------------------------------------
@@ -40,38 +39,80 @@ class Drone:
         return (self.x, self.y)
 
 def parse_tile(s: str) -> Optional[Dict]:
+    """
+    Parse a tile string. Supports two formats:
+    - Mapping.py convention (preferred):
+        x[0:3], y[3:5], [5:reserved], fire_flag[6], severity[7], wind[8], dir[9],
+        citizen[10], firefighter[11], turns_since_seen[12], trust[13]
+      Minimum length: 14
+    - Legacy fire_viz format:
+        x[0:3], y[3:5], severity[5], wind[6], dir[7], citizen[8], firefighter[9],
+        optional n/trust from position 10 onward
+      Minimum length: 10
+    Returns dict with unified keys: x, y, fire(severity), windspeed, winddir,
+    citizen, firefighter, n(turns), trust, and fire_flag when available.
+    """
     if not s or s == UNMAPPED:
         return None
-    if len(s) < 10:
-        return None
     try:
-        x = int(s[0:3]); y = int(s[3:5])
-        fire = int(s[5]); windspeed = int(s[6]); winddir = int(s[7])
-        citizen = int(s[8]); firefighter = int(s[9])
-        n = -1; trust = -1
-        if len(s) > 10:
-            tail = s[10:]
-            if len(tail) == 2:
-                n, trust = int(tail[0]), int(tail[1])
-            elif len(tail) == 3:
-                n, trust = int(tail[0]), int(tail[1:])
-            elif len(tail) >= 4:
-                n, trust = int(tail[0:2]), int(tail[2:4])
-        return dict(x=x, y=y, fire=fire, windspeed=windspeed, winddir=winddir,
-                    citizen=citizen, firefighter=firefighter, n=n, trust=trust)
+        if len(s) >= 14:
+            # Mapping.py convention
+            x = int(s[0:3]); y = int(s[3:5])
+            # s[5] reserved/unused
+            fire_flag = int(s[6])
+            severity = int(s[7])
+            wind = int(s[8])
+            wdir = int(s[9])
+            citizen = int(s[10])
+            firefighter = int(s[11])
+            n = int(s[12])
+            trust = int(s[13])
+            return dict(x=x, y=y, fire=severity, fire_flag=fire_flag,
+                        windspeed=wind, winddir=wdir,
+                        citizen=citizen, firefighter=firefighter,
+                        n=n, trust=trust)
+        elif len(s) >= 10:
+            # Legacy convention
+            x = int(s[0:3]); y = int(s[3:5])
+            severity = int(s[5])
+            wind = int(s[6]); wdir = int(s[7])
+            citizen = int(s[8]); firefighter = int(s[9])
+            n = -1; trust = -1
+            if len(s) > 10:
+                tail = s[10:]
+                if len(tail) == 2:
+                    n, trust = int(tail[0]), int(tail[1])
+                elif len(tail) == 3:
+                    n, trust = int(tail[0]), int(tail[1:])
+                elif len(tail) >= 4:
+                    n, trust = int(tail[0:2]), int(tail[2:4])
+            fire_flag = 1 if severity > 0 else 0
+            return dict(x=x, y=y, fire=severity, fire_flag=fire_flag,
+                        windspeed=wind, winddir=wdir,
+                        citizen=citizen, firefighter=firefighter,
+                        n=n, trust=trust)
+        else:
+            return None
     except Exception:
         return None
 
 def encode_tile(x:int,y:int,fire:int,wind:int,wd:int,cit:int,ff:int,n:int=-1,trust:int=-1) -> str:
-    base = f"{x:03d}{y:02d}{int(fire)%10}{int(wind)%10}{int(wd)%4}{int(cit)%2}{int(ff)%2}"
-    if n >= 0 and trust >= 0:
-        if n < 10 and trust < 10:
-            return base + f"{n}{trust}"
-        elif n < 10 and trust < 100:
-            return base + f"{n}{trust:02d}"
-        else:
-            return base + f"{n:02d}{trust:02d}"
-    return base
+    """
+    Encode a tile using Mapping.py convention.
+    fire parameter is interpreted as severity (0-9). fire_flag is derived as 1 if fire>0 else 0.
+    Positions: x[0:3], y[3:5], reserved[5]='0', fire_flag[6], severity[7], wind[8], dir[9],
+               citizen[10], firefighter[11], turns[12], trust[13]
+    When n/trust are negative, default them to 0 to keep fixed length.
+    """
+    severity = int(fire) % 10
+    fire_flag = 1 if severity > 0 else 0
+    wind = int(wind) % 10
+    wd = int(wd) % 10  # allow up to 9; mapping.py mentions direction at index 9
+    cit = int(cit) % 10
+    ff = int(ff) % 10
+    n = 0 if n < 0 else int(n) % 10
+    trust = 0 if trust < 0 else int(trust) % 10
+    return f"{x:03d}{y:02d}0{fire_flag}{severity}{wind}{wd}{cit}{ff}{n}{trust}"
 
 def tiles_to_arrays(matrix: List[List[str]]):
     H = len(matrix); W = len(matrix[0])
