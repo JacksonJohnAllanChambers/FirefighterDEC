@@ -17,7 +17,7 @@ class Zone:
         self.yMax = yMax
         self.xMin = xMin
         self.yMax = yMin
-        
+
 class Drone:
     def __init__(self, zone, number = 0, x = 0, y = 0):
         self.number = number
@@ -27,17 +27,36 @@ class Drone:
         self.water = 0
         self.capacity = 10
 
-    def firefight(self):
+    def firefight(self, i):
         fireSeverity = self.location.getFireSeverity()
         if(fireSeverity>= 4):
-            self.spray(self, fireSeverity)
+            self.spray(self, fireSeverity, i)
 
-    def spray(self, fireSeverity):
+    def spray(self, fireSeverity, i):
+
+        if i == 0:
+            max = 10
+
+        if 0 < i <= 15:
+            max = 7
+
+        if 15 < i <= 25:
+            max = 5
+
+        if 25 < i <= 40:
+            max = 2
+
+        if 40 < i:
+            max = 0
+
+
         for i in range(3, fireSeverity): # not sure if number is right #  
-            if self.water >= 0:
+            j = 0
+            if (self.water >= 0) and (j <= max):
                 self.water -= 1
                 fireSeverity -= 1
                 set.severity(self.location, fireSeverity)
+                j = j + 1
             else:
                 self.waterRefill()
                 break
@@ -53,23 +72,39 @@ class Drone:
         return self.x, self.y
     
     def searchFire(self):
+        i = 0
         x, y = self.location()
 
         if self.water == 0:
             self.waterRefill()
             return
     
-        while xMax <= x <= xMin:
-         while yMax <= y <= yMin + 1:
-            fire = Mapping.get_fire(x,y)
-            if fire >= highFire:
-                highFire = (x,y)
-            if highFire != 0:
-                self.move(highFire)
+        while xMax >= x >= xMin:
+         
+         while yMax >= y >= yMin:
+            i = i +1
+
+            if y <= yMax :
+                y = y + 1
+
+            else:
+                y = y-1
+
+            if x <= xMax:
+                x = x + 1
+            
+            else:
+                x = x -1 
+
+            if Mapping.get_fire(x, y) >= 4 and Mapping.get_wing(x, y) >= 4:
+                self.fireFight(i)
+                self.move(x, y)
+                
             else:
                 self.searchFire()
 
-    def Empty_Search():
+
+    def emptySearch():
         Mapping.get_info(x,y)
     
 class fireFighter:
