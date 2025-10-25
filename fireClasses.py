@@ -46,7 +46,7 @@ class Drone:
 
     def location(self):
         return self.x, self.y
-
+    
 class fireFighter:
     def __init__(self, x, y):
         self.x
@@ -59,11 +59,11 @@ class fireFighter:
 
         ogX, ogY = self.location
 
-        x = []
-        y = []
+        x = [ogX+1, ogX + 1, ogX, ogX -1, ogX -1, ogX -1, ogX, ogX + 1]
+        y = [ogY, ogY + 1, ogY + 1, ogY + 1, ogY, ogY- 1, ogY -1, ogY -1]
 
         for i in range (0, 5):
-            a = get_fire(x[i], y[i])
+            a = Mapping.get_fire(x[i], y[i])
 
             if a !=0:
                 fires = fires + 1
