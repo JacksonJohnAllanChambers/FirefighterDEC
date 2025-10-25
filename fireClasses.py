@@ -1,7 +1,5 @@
-import numpy as np
 import Mapping
-
-matrix = np.random.rand(100, 550)
+import numpy as np
 
 class RefillStation:
     def __init__(self, name, x, y):
@@ -39,7 +37,7 @@ class Drone:
                 break
 
     def waterRefill(self):
-        #x, y = waterRoute()
+        x, y = Mapping.waterRoute()
         self.move(self, x, y)
 
     def move(self, x, y):
@@ -55,11 +53,6 @@ class fireFighter:
 
     def location(self):
         return self.x, self.y
-    
-    def x(self):
-        return self.x
-    def y(self):
-        return self.y
     
     def fireEscape(self):
 
