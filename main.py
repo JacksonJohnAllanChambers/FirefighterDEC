@@ -8,6 +8,8 @@ Halifax = RefillStation("Halifax", 265, 30),
 NewGlasgow = RefillStation("New Glasgow", 400, 75),
 Sydeney = RefillStation("Sydney", 540, 50)
 
+zoneOne = 
+
 droneOne = Drone(1, 0, 0)
 droneTwo = Drone(2, 0, 0)
 droneThree = Drone(3, 0, 0)
