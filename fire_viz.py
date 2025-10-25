@@ -1,9 +1,13 @@
+##-----------------------------------------------------------------------------
+# Fire Viz - Visualization of FirefighterDEC fire mapping and drone data (AI assisted) 
+#-----------------------------------------------------------------------------
 import os
 import math
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle
 from matplotlib.transforms import Affine2D
 from typing import Optional, Dict, List, Tuple
 # -----------------------------------------------------------------------------
@@ -190,6 +194,204 @@ def generate_dummy_drones(num=4, seed: Optional[int]=7) -> List[Drone]:
         x = int(rng.integers(0, WIDTH)); y = int(rng.integers(0, HEIGHT))
         drones.append(Drone(x, y, name=chr(ord('A') + i)))
     return drones
+# -----------------------------------------------------------------------------
+# Simple per-round overlay plotter (static figure) for live GUI updating
+# -----------------------------------------------------------------------------
+def draw_scan_window(ax, x:int, y:int, color_alpha:float=0.2):
+    rect = Rectangle((x-1, y-1), 3, 3, linewidth=1, edgecolor=None, facecolor='grey', alpha=color_alpha)
+    ax.add_patch(rect)
+
+def plot_fire_maps(hist_map: List[List[str]],
+                   pred_map: List[List[str]],
+                   drones: List[Drone],
+                   show_scan_windows: bool = True,
+                   pred_alpha: float = 0.35,
+                   wind_stride: int = 5,
+                   figsize: Tuple[int,int] = (18, 5),
+                   save_path: Optional[str] = None,
+                   title: str = "Firefighting Drone Swarm - Historical (base) + Predicted (overlay)"):
+    arrays_hist = tiles_to_arrays(hist_map)
+    arrays_pred = tiles_to_arrays(pred_map)
+    H, W = arrays_hist["fire"].shape
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # Base = historical fire severity, overlay = predicted
+    base_fire = np.ma.masked_invalid(arrays_hist["fire"])  # nan -> transparent
+    im1 = ax.imshow(base_fire, origin='upper', interpolation='nearest')
+    pred_fire = np.ma.masked_invalid(arrays_pred["fire"])  # nan -> transparent
+    im2 = ax.imshow(pred_fire, origin='upper', interpolation='nearest', alpha=pred_alpha)
+
+    # Wind arrows (sampled by stride)
+    for y in range(0, H, wind_stride):
+        for x in range(0, W, wind_stride):
+            if arrays_hist["mapped"][y, x] or arrays_pred["mapped"][y, x]:
+                wd = arrays_pred["winddir"][y, x]; ws = arrays_pred["windspeed"][y, x]
+                if np.isnan(wd) or np.isnan(ws):
+                    wd = arrays_hist["winddir"][y, x]; ws = arrays_hist["windspeed"][y, x]
+                if not (np.isnan(wd) or np.isnan(ws)):
+                    dx, dy = DIR_TO_VEC[int(wd)]
+                    scale = 0.2 + 0.06 * float(ws)
+                    ax.arrow(x, y, dx*scale, dy*scale, head_width=0.6, head_length=0.6,
+                             length_includes_head=True, zorder=3)
+
+    # Citizens and firefighters
+    citizen_mask = (arrays_hist["citizen"] | arrays_pred["citizen"])
+    ff_mask = (arrays_hist["firefighter"] | arrays_pred["firefighter"])
+    cy, cx = np.where(citizen_mask)
+    fy, fx = np.where(ff_mask)
+    ax.scatter(cx, cy, s=25, marker='^', label='Citizen')
+    ax.scatter(fx, fy, s=25, marker='s', label='Firefighter')
+
+    # Drones
+    for d in drones:
+        dx, dy = d.location()
+        ax.scatter([dx], [dy], s=80, marker='X', label=f"Drone {d.name}")
+        ax.text(dx+1, dy-1, d.name, fontsize=8, ha='left', va='center')
+        if show_scan_windows:
+            draw_scan_window(ax, dx, dy, color_alpha=0.15)
+
+    ax.set_xlim(-0.5, W-0.5); ax.set_ylim(H-0.5, -0.5); ax.set_aspect('equal')
+    ax.set_xlabel("X"); ax.set_ylabel("Y"); ax.set_title(title)
+
+    handles = [Line2D([0],[0], marker="^", linestyle="None", markersize=6, label="Citizen"),
+               Line2D([0],[0], marker="s", linestyle="None", markersize=6, label="Firefighter"),
+               Line2D([0],[0], marker="X", linestyle="None", markersize=8, label="Drone")]
+    ax.legend(handles=handles, loc="upper right")
+
+    cbar = fig.colorbar(im1, ax=ax, fraction=0.025, pad=0.02); cbar.set_label("Fire severity (0–9)")
+    if save_path:
+        plt.tight_layout(); plt.savefig(save_path, dpi=200)
+    return fig, ax
+
+# -----------------------------------------------------------------------------
+# In-place updating visualizer for long-running loops
+# -----------------------------------------------------------------------------
+class FireViz:
+    def __init__(self,
+                 figsize: Tuple[int, int] = (18, 5),
+                 pred_alpha: float = 0.35,
+                 wind_stride: int = 5):
+        self.pred_alpha = pred_alpha
+        self.wind_stride = wind_stride
+
+        # Base figure/axes
+        self.fig, self.ax = plt.subplots(figsize=figsize)
+        self.ax.set_aspect('equal')
+
+        # Initialize empty layers
+        base = np.full((HEIGHT, WIDTH), np.nan)
+        self.im_hist = self.ax.imshow(np.ma.masked_invalid(base), origin='upper', interpolation='nearest')
+        self.im_pred = self.ax.imshow(np.ma.masked_invalid(base), origin='upper', interpolation='nearest', alpha=self.pred_alpha)
+
+        # Overlays
+        self.cit_scatter = self.ax.scatter([], [], s=25, marker='^', label='Citizen')
+        self.ff_scatter = self.ax.scatter([], [], s=25, marker='s', label='Firefighter')
+        self.drone_scatter = self.ax.scatter([], [], s=80, marker='X', label='Drone')
+        self.drone_labels: Dict[str, any] = {}
+        self.scan_patches: List[Rectangle] = []
+        self.wind_artists: List[any] = []
+
+        self.ax.set_xlim(-0.5, WIDTH-0.5)
+        self.ax.set_ylim(HEIGHT-0.5, -0.5)
+        self.ax.set_xlabel("X"); self.ax.set_ylabel("Y")
+
+        handles = [Line2D([0],[0], marker="^", linestyle="None", markersize=6, label="Citizen"),
+                   Line2D([0],[0], marker="s", linestyle="None", markersize=6, label="Firefighter"),
+                   Line2D([0],[0], marker="X", linestyle="None", markersize=8, label="Drone")]
+        self.ax.legend(handles=handles, loc="upper right")
+        self.cbar = self.fig.colorbar(self.im_hist, ax=self.ax, fraction=0.025, pad=0.02)
+        self.cbar.set_label("Fire severity (0–9)")
+
+    def _clear_artists(self):
+        for p in self.scan_patches:
+            try:
+                p.remove()
+            except Exception:
+                pass
+        self.scan_patches.clear()
+        for a in self.wind_artists:
+            try:
+                a.remove()
+            except Exception:
+                pass
+        self.wind_artists.clear()
+
+    def draw(self,
+             hist_map: List[List[str]],
+             pred_map: List[List[str]],
+             drones: List[Drone],
+             title: Optional[str] = None,
+             save_path: Optional[str] = None,
+             show_scan_windows: bool = True):
+        arrays_hist = tiles_to_arrays(hist_map)
+        arrays_pred = tiles_to_arrays(pred_map)
+
+        # Update raster layers
+        self.im_hist.set_data(np.ma.masked_invalid(arrays_hist["fire"]))
+        self.im_pred.set_data(np.ma.masked_invalid(arrays_pred["fire"]))
+
+        # Update scatters
+        cy, cx = np.where(arrays_hist["citizen"] | arrays_pred["citizen"])
+        fy, fx = np.where(arrays_hist["firefighter"] | arrays_pred["firefighter"])
+        self.cit_scatter.set_offsets(np.c_[cx, cy] if len(cx) else np.empty((0,2)))
+        self.ff_scatter.set_offsets(np.c_[fx, fy] if len(fx) else np.empty((0,2)))
+
+        # Drones and labels
+        dxs, dys = [], []
+        names_present = set()
+        for d in drones:
+            x, y = d.location()
+            dxs.append(x); dys.append(y)
+            names_present.add(d.name)
+            if d.name not in self.drone_labels:
+                self.drone_labels[d.name] = self.ax.text(x+1, y-1, d.name, fontsize=8, ha='left', va='center')
+            else:
+                self.drone_labels[d.name].set_position((x+1, y-1))
+        # Remove labels for drones that disappeared
+        for name in list(self.drone_labels.keys()):
+            if name not in names_present:
+                try:
+                    self.drone_labels[name].remove()
+                except Exception:
+                    pass
+                del self.drone_labels[name]
+        self.drone_scatter.set_offsets(np.c_[dxs, dys] if len(dxs) else np.empty((0,2)))
+
+        # Clear and redraw wind and scan windows
+        self._clear_artists()
+        if show_scan_windows:
+            for d in drones:
+                x, y = d.location()
+                rect = Rectangle((x-1, y-1), 3, 3, linewidth=1, edgecolor=None, facecolor='grey', alpha=0.15)
+                self.ax.add_patch(rect)
+                self.scan_patches.append(rect)
+
+        for y in range(0, HEIGHT, self.wind_stride):
+            for x in range(0, WIDTH, self.wind_stride):
+                if arrays_hist["mapped"][y, x] or arrays_pred["mapped"][y, x]:
+                    wd = arrays_pred["winddir"][y, x]; ws = arrays_pred["windspeed"][y, x]
+                    if np.isnan(wd) or np.isnan(ws):
+                        wd = arrays_hist["winddir"][y, x]; ws = arrays_hist["windspeed"][y, x]
+                    if not (np.isnan(wd) or np.isnan(ws)):
+                        dx, dy = DIR_TO_VEC[int(wd)]
+                        scale = 0.2 + 0.06 * float(ws)
+                        arr = self.ax.arrow(x, y, dx*scale, dy*scale, head_width=0.6, head_length=0.6,
+                                            length_includes_head=True, zorder=3)
+                        self.wind_artists.append(arr)
+
+        if title:
+            self.ax.set_title(title)
+        if save_path:
+            self.fig.tight_layout()
+            self.fig.savefig(save_path, dpi=200)
+        # Nudge the GUI to render this update; caller can still call plt.pause()
+        try:
+            self.fig.canvas.draw_idle()
+            self.fig.canvas.flush_events()
+        except Exception:
+            pass
+        return self.fig, self.ax
 
 # --- helper to compute bounds that fully contain the rotated W×H rectangle ---
 def rotated_bounds(w, h, deg):
