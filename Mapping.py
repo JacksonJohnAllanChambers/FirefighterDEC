@@ -1,9 +1,13 @@
 #mapping
 import sys
 import math
+import main
+import Rescue
 import fireClasses
+
 import numpy as np
 from typing import Union
+
 # for string xxxyyyfwcf
 # x cord (0-2)
 # y cord (3-4)
@@ -53,17 +57,15 @@ def scan_map(map):
                     #get drone location
                     drone_location = drone_location(location)
                     #check if in range of drone
-                    if (drone_location.x -1 <= int(xcord) <= drone_location.x + 1) and (drone_location.y -1 <= int(ycord) <= drone_location.y + 1)
+                    if (drone_location.x -1 <= int(xcord) <= drone_location.x + 1) and (drone_location.y -1 <= int(ycord) <= drone_location.y + 1):
                         #get rest of data
                         fire = content[6]
                         wind = content[7]
                         direction = content[8]
-                        citizens = content[9]
-                        #create citizen
+                        Rescue.rescue_citizens(xcord,ycord)
+                        citizens = 0
                         firefighter = content[10]
-                        #create firefighter
-
-                        #update current map
+                        main.Fire_fighters.append(fireClasses.fireFighter(xcord,ycord))
                         map[xcord][ycord] = xcord + ycord + fire + wind + citizens + firefighter + '0' #zeros since it is seen by a drone
                     else:
                         map[xcord][ycord] = str(int(map[xcord][ycord]) + 1) # update turns since seen
@@ -76,44 +78,48 @@ def submit_moves(Submitted_map):
                     file.write(Submitted_map[x][y] + '\n')
 
 def update_predicted_map(map):
-    Predicted_map = map
+    main.Predicted_map = map
 
+def get_info(x,y):
+    return main.Current_map[x][y]
+def set_info(x,y,val):
+    main.Current_map[x][y] = val
 
 def get_fire(x,y):
-    return Current_map[x][y][6]
+    return main.Current_map[x][y][6]
 def set_fire(x,y,val):
-    Current_map[x][y][6] = val
+    main.Current_map[x][y][6] = val
 
 def get_sevarity(x,y):
-    return Current_map[x][y][7]
+    return main.Current_map[x][y][7]
 def set_sevarity(x,y,val):
-    Current_map[x][y][7] = val
+    main.Current_map[x][y][7] = val
 
 def get_wind(x,y):
-    return Current_map[x][y][8]
+    return main.Current_map[x][y][8]
 def set_wind(x,y,val):
-    Current_map[x][y][8] = val
+    main.Current_map[x][y][8] = val
 
 def get_direction(x,y):
-    return Current_map[x][y][9]
+    return main.Current_map[x][y][9]
 
 def get_citizens(x,y):
-    return Current_map[x][y][10]
+    return main.Current_map[x][y][10]
 def set_citizens(x,y,val):
-    Current_map[x][y][10] = val
+    main.Current_map[x][y][10] = val
 
 def get_firefighter(x,y):
-    return Current_map[x][y][11]
+    return main.Current_map[x][y][11]
 def set_firefighter(x,y,val):
-    Current_map[x][y][11] = val
+    main.Current_map[x][y][11] = val
 
 def get_lastseen(x,y):
-    return Current_map[x][y][12]  
+    return main.Current_map[x][y][12]  
 
 def get_trust(x,y):
-    return Current_map[x][y][13] 
+    return main.Current_map[x][y][13] 
 def set_tust(x,y,val):
-    Current_map[x][y][13] = val
+    main.Current_map[x][y][13] = val
      
 
 ##water route

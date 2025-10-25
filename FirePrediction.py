@@ -26,30 +26,28 @@ def fire_prediction(Current_map):
                                 #Check if there is already a fire at position
                                 if(Mapping.get_fire(x, y - 1) == 1):
                                     Mapping.set_fire(x, y - 1, Mapping.get_fire(x, y - 1) + 1)
-                                if(get_fire(x, y - 1) >= 1):
-                                    Mapping.set_fire(x, y - 1, get_fire(x, y - 1) + 1)
+                                if(Mapping.get_fire(x, y - 1) >= 1):
+                                    Mapping.set_fire(x, y - 1, Mapping.get_fire(x, y - 1) + 1)
                                 #if not a new fire set a new one
                                 else:
-                                    new_fire(x, y - 1, get_fire(x,y)/2)
+                                    Mapping.new_fire(x, y - 1, Mapping.get_fire(x,y)/2)
                             case 1:
                                 if(Mapping.get_fire(x + 1, y) == 1):
-                                    new_severity(x + 1, y, get_severity(x + 1, y) + 1)
+                                    Mapping.set_fire(x + 1, y, Mapping.get_severity(x + 1, y) + 1)
                                 if(Mapping.get_fire(x + 1, y) >= 1):
                                     Mapping.set_fire(x + 1, y, Mapping.get_fire(x + 1, y) + 1)
                                 else:
-                                    Mapping.set_fire(x + 1, y, get_fire(x,y)/2)
+                                    Mapping.set_fire(x + 1, y, Mapping.get_fire(x,y)/2)
                             case 2:
-                                if(get_fire(x, y + 1) >= 1):
-                                    Mapping.set_fire(x, y + 1, get_fire(x, y - 1) + 1)
+                                if(Mapping.get_fire(x, y + 1) >= 1):
+                                    Mapping.set_fire(x, y + 1, Mapping.get_fire(x, y - 1) + 1)
                                 else:
-                                    Mapping.set_fire(x, y + 1, get_fire(x,y)/2)
+                                    Mapping.set_fire(x, y + 1, Mapping.get_fire(x,y)/2)
                             case 3:
                                 if(Mapping.get_fire(x - 1, y) == 1):
-                                    new_severity(x - 1, y, get_severity(x - 1, y) + 1)
-                                if(get_fire(x - 1, y) >= 1):
-                                    Mapping.set_fire(x - 1, y, get_fire(x - 1, y) + 1)
+                                    Mapping.set_fire(x - 1, y, Mapping.get_severity(x - 1, y) + 1)
+                                if(Mapping.get_fire(x - 1, y) >= 1):
+                                    Mapping.set_fire(x - 1, y, Mapping.get_fire(x - 1, y) + 1)
                                 else:
-                                    Mapping.set_fire(x - 1, y, get_fire(x,y)/2)
-                                    
-    Mapping.update_predicted_map(map)
-    return
+                                    Mapping.set_fire(x - 1, y, Mapping.get_fire(x,y)/2)
+    return map
