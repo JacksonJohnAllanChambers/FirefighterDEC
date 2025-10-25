@@ -139,8 +139,7 @@ def get_refil_path(Drone):
             temp == temp
     
     #path determine
-    station_x = station[closest_station][1]
-    station_y = station[closest_station][2]
+    station_x, station_y = fireClasses.Drone.Zone.station
 
     #determine favoured direction
     if abs(x - station_x) > abs(y - station_y):

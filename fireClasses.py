@@ -9,21 +9,22 @@ class RefillStation:
     def __init__(self, name, x, y):
         self.name = name
         self.x = x
-        self. y = y
+        self.y = y
 
 class Zone:
-    def __init__(self, xMax, yMax, xMin, yMin):
+    def __init__(self, xMax, yMax, xMin, yMin, station):
         self.xMax = xMax
         self.yMax = yMax
         self.xMin = xMin
         self.yMax = yMin
+        self.station = station
 
 class Drone:
-    def __init__(self, zone, number = 0, x = 0, y = 0):
+    def __init__(self, z, number = 0, x = 0, y = 0,):
         self.number = number
         self.x = x
         self.y = y
-        self.zone = zone
+        self.zone = z
         self.water = 0
         self.capacity = 10
 
@@ -102,10 +103,6 @@ class Drone:
                 
             else:
                 self.searchFire()
-
-
-    def emptySearch():
-        Mapping.get_info(x,y)
     
 class fireFighter:
     def __init__(self, x, y):
