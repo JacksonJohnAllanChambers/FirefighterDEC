@@ -57,6 +57,7 @@ def scan_map(map):
 
 def submit_moves(Submitted_map):
      with open('map.txt', 'w') as file:
+          file.write(f"{main.round}\n")
           for x in range(550):
                for y in range(100):
                     ## check if we altered that data
@@ -64,6 +65,7 @@ def submit_moves(Submitted_map):
                         file.write(Submitted_map[x][y] + '\n')
                     else:
                         file.write(main.Real_mapmap[x][y] + '\n')
+                        
 
 def update_predicted_map(map):
     main.Predicted_map = map
