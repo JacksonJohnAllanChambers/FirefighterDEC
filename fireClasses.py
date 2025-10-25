@@ -1,4 +1,5 @@
 import numpy as np
+import Mapping
 
 matrix = np.random.rand(100, 550)
 
@@ -63,7 +64,7 @@ class fireFighter:
         y = []
 
         for i in range (0, 5):
-            a = get_fire(x[i], y[i])
+            a = Mapping.get_fire(x[i], y[i])
 
             if a !=0:
                 fires = fires + 1
