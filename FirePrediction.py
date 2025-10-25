@@ -16,7 +16,7 @@ current_map = [['\0' for _ in range(550)] for _ in range(100)]
 map = current_map
 predicted_map = [['\0' for _ in range(550)] for _ in range(100)]
 
-def fire_prediction():
+def FirePrediction():
     for x in range(550):
         for y in range (100):
             ## See if there is a fire, if the severity is greater than 4, and if the windspeed is greater than 0
