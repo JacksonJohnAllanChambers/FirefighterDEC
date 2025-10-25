@@ -1,4 +1,5 @@
 import numpy as np
+import Mapping
 
 matrix = np.random.rand(100, 550)
 
@@ -54,6 +55,11 @@ class fireFighter:
 
     def location(self):
         return self.x, self.y
+    
+    def x(self):
+        return self.x
+    def y(self):
+        return self.y
     
     def fireEscape(self):
 
