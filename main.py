@@ -31,9 +31,18 @@ Current_map = [['\0' for _ in range(550)] for _ in range(100)]
 Predicted_map = [['\0' for _ in range(550)] for _ in range(100)]
 Fire_fighters = []
 
+round = -1
+
 def main():
 
     while(1):
+        new_round = open("your_file.txt").readline().strip()[0]
+        if new_round == round:
+            continue #wait for file change
+        else:
+            round = new_round
+        
+
         # get info, also handles rescuing citicens
         Mapping.scan_map(Current_map)
 
@@ -45,8 +54,8 @@ def main():
         for i in range(5):
             drones[i].Search() #this handles all the drones moves
 
-        subprocess.run("-o firegen.exe")
-        time.sleep(sleepTime)
+        Mapping.submit_moves(Current_map)
+
     
     
     
