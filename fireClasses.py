@@ -83,6 +83,9 @@ class Drone:
         while xMax >= x >= xMin:
          
          while yMax >= y >= yMin:
+            if i == 50:
+                break
+
             i = i +1
 
             if y <= yMax :
@@ -100,10 +103,11 @@ class Drone:
             if Mapping.get_fire(x, y) >= 4 and Mapping.get_wing(x, y) >= 4:
                 self.fireFight(i)
                 self.move(x, y)
+                break
                 
             else:
                 self.searchFire()
-    
+
 class fireFighter:
     def __init__(self, x, y):
         self.x
@@ -132,7 +136,3 @@ class fireFighter:
             escape = 0
 
         return escape
-
-
-    
-
