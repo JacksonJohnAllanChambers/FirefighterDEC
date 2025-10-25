@@ -13,9 +13,10 @@
 
 
 current_map = [['\0' for _ in range(550)] for _ in range(100)]
+map = current_map
 predicted_map = [['\0' for _ in range(550)] for _ in range(100)]
 
-def main():
+def fire_prediction():
     for x in range(550):
         for y in range (100):
             ## See if there is a fire, if the severity is greater than 4, and if the windspeed is greater than 0
@@ -62,10 +63,10 @@ def get_severity(x,y):
 
 #Setter
 def new_fire(x,y,n):
-    predicted_map[x][y][6] = n
+    map[x][y][6] = n
     return
 def new_severity(x,y,n):
-    predicted_map[x][y][7] = n
+    map[x][y][7] = n
     return
 
-set(predicted_map)
+set(predicted_map) = map
